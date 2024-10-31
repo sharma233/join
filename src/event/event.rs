@@ -6,11 +6,11 @@ use serde::{Serialize, Deserialize};
 use r2d2_sqlite::rusqlite::{Error, params};
 
 #[derive(Serialize, Deserialize)]
-struct Event {
-    id: Uuid,
-    location: String,
-    time: DateTime<Utc>,
-    description: String
+pub struct Event {
+    pub id: Uuid,
+    pub location: String,
+    pub time: DateTime<Utc>,
+    pub description: String
 }
 
 pub fn create_event(state: Arc<join::AppState>, event: &Event) -> Result<(), Error> {

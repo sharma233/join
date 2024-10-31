@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+    <div class="mb-5 p-3 container-fluid">
+		<form action="" method="post">
+			<div class="mb-3">
+				<label for="location" class="form-label">Where?</label>
+				<input name="location" type="text" class="form-control" id="location" aria-describedby="locationHelp">
+				<div id="locationHelp" class="form-text">A short description of where this event is happening</div>
+			</div>
+
+			<div class="mb-3">
+				<label for="time" class="form-label">When?</label>
+				<input type="datetime-local" class="form-control" id="time" aria-describedby="timeHelp">
+				<input name="timeUtc" type="text" class="form-control" id="timeUtc" aria-describedby="timeHelp">
+				<div id="timeHelp" class="form-text">When is this happening? In your local time</div>
+			</div>
+
+			<div class="mb-3">
+				<label for="desc" class="form-label">What?</label>
+				<input name="desc" type="text" class="form-control" id="desc" aria-describedby="descHelp">
+				<div id="descHelp" class="form-text">What's happening?</div>
+			</div>
+
+			<div class="mb-3">
+				<label for="firstName" class="form-label">First Name</label>
+				<input name="firstName" type="text" class="form-control" id="firstName" aria-describedby="firstNameHelp">
+				<div id="firstNameHelp" class="form-text">Your First Name</div>
+			</div>
+
+			<div class="mb-3">
+				<label for="lastName" class="form-label">Last Name</label>
+				<input name="lastName" type="text" class="form-control" id="lastName" aria-describedby="lastNameHelp">
+				<div id="lastNameHelp" class="form-text">Your Last Name</div>
+			</div>
+
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+		$("#time").change(function(e){
+			$("#timeUtc").val(moment($(e.target).val()).utc().toISOString())
+		});
+	</script>
+{% endblock %} 

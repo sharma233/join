@@ -13,3 +13,4 @@ tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12.7", features = ["json"] }
 serde = { version = "1.0.208", features=["derive"] }
 rusqlite = { version = "0.32.1", features=["chrono"] }
+minijinja = { version = "2.1.2", features=["loader"] }
