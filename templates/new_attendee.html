@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+    <div class="mb-5 p-3 container-fluid">
+		<form action="" method="post">
+			<div class="mb-3">
+				<label for="firstName" class="form-label">First Name</label>
+				<input name="firstName" type="text" class="form-control" id="firstName" required>
+			</div>
+
+			<div class="mb-3">
+				<label for="lastName" class="form-label">Last Name</label>
+				<input name="lastName" type="text" class="form-control" id="lastName" required>
+			</div>
+
+			<button type="submit" class="btn btn-primary">Attend!</button>
+		</form>
+    </div>
+{% endblock %}

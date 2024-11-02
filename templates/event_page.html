@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+    <div class="mb-5 p-3 container-fluid">
+		<h1> {{ page.event.description }} </h1>
+		<p> Event location: {{ page.event.location }} <p>
+		<p> Event time: {{ page.event.time}} <p>
+    </div>
+	<div class="mb-5 p-3 container-fluid">
+		<h1> Other people going: </h1>
+		<a href="/new_attendee/{{page.event.id}}" class="btn btn-primary">join them!</a>
+		<ul>
+			{% for a in page.attendees %}
+			<li data-id={{a.id}} class="list-group-item">
+				{{ a.first_name }} {{ a.last_name }} 
+			</li>
+			{% endfor %}
+		</ul>
+    </div>
+	
+{% endblock %}
+
+{% block scripts %}
+{% endblock %} 
