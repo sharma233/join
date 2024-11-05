@@ -43,6 +43,7 @@ struct NewAttendeeForm {
 #[tokio::main]
 async fn main() {
     let manager = SqliteConnectionManager::file("./join.db");
+    //should panic
     let pool = r2d2::Pool::new(manager).unwrap();
     let shared_state = Arc::new(join::AppState {
         conn_pool: pool
@@ -57,7 +58,9 @@ async fn main() {
         .route("/new_attendee/:event_id", post(new_attendee_post))
         .with_state(shared_state);
 
+    //should panic
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    //should panic
     axum::serve(listener, app).await.unwrap();
 }
 

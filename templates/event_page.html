@@ -4,24 +4,53 @@
 {% endblock %}
 
 {% block content %}
-    <div class="mb-5 p-3 container-fluid">
-		<h1> {{ page.event.description }} </h1>
-		<p> Event location: {{ page.event.location }} <p>
-		<p> Event time: {{ page.event.time}} <p>
+
+    <div class="card p-3" id="event-card">
+		<h1> {{page.event.description}} </h1>
+		<div class="card-body">
+			<p class="card-text"><i class="bi bi-compass-fill"></i> {{ page.event.location }} </p> 
+				<p hidden class="card-text" id="event-time-utc"><i class="bi bi-calendar-fill"></i> {{ page.event.time }}</p>
+				<p class="card-text" id="event-time"><i class="bi bi-calendar-fill"></i> </p>
+
+			<h5> Who's Going? </h5>
+			<ul class="list-group">
+				{% for a in page.attendees %}
+				<li class="list-group-item" data-id={{a.id}} class="list-group-item">
+					<i class="bi bi-person-fill"></i>
+					{{ a.first_name }} {{ a.last_name }} 
+				</li>
+				{% endfor %}
+			</ul>
+			<a href="/new_attendee/{{page.event.id}}" class="mt-3 btn btn-primary">Join Them!</a>
+		</div>
     </div>
-	<div class="mb-5 p-3 container-fluid">
-		<h1> Other people going: </h1>
-		<a href="/new_attendee/{{page.event.id}}" class="btn btn-primary">join them!</a>
-		<ul>
-			{% for a in page.attendees %}
-			<li data-id={{a.id}} class="list-group-item">
-				{{ a.first_name }} {{ a.last_name }} 
-			</li>
-			{% endfor %}
-		</ul>
-    </div>
+
+		
 	
 {% endblock %}
 
 {% block scripts %}
-{% endblock %} 
+<script>
+	//set time based on user timezone
+	var localTime = moment($("#event-time-utc")[0].innerText).format('MMMM Do YYYY, h:mm:ss a');
+	$($("#event-time")[0]).append(localTime);
+
+	//create random gradient
+	function getColor(dark) {
+		//var letters = '0123456789ABCDEF';
+		var letters = "";
+		if(dark) {
+			letters = '01234567';
+		} else {
+			letters = '89ABCDEF';
+		}
+		var color = '#';
+		for (var i = 0; i < 6; i++) {
+		color += letters[Math.floor(Math.random() * 8)];
+		}
+		return color;
+	}
+	$("#event-card").css("background", "linear-gradient(to right," + getColor(true) + "," + getColor(false));
+</script>
+
+{% endblock %}
