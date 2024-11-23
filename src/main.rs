@@ -4,15 +4,16 @@ mod attendee;
 use axum::handler::HandlerWithoutStateExt;
 use attendee::attendee::{create_attendee, get_attendees_by_event_id, Attendee};
 use axum::{
-    http::{StatusCode, Uri},
+    http::{StatusCode, Uri, header},
     routing::{get, post},
     Router,
     extract::{State, Form, Path, Host},
-    response::{Html, Redirect},
-    BoxError
+    response::{Html, Redirect, IntoResponse},
+    BoxError,
 };
 use axum_server::tls_rustls::RustlsConfig;
 use std::sync::Arc;
+use std::fs;
 use r2d2_sqlite::SqliteConnectionManager;
 use minijinja::{Environment, context};
 use serde::Deserialize;
@@ -22,6 +23,7 @@ use uuid::Uuid;
 use event::event::{get_event_by_id, Event};
 use event::event::create_event;
 use std::net::SocketAddr;
+use ics::{properties::{DtStart, Location, Summary, TzID}, Event as ICSEvent, ICalendar};
 
 #[derive(Deserialize)]
 #[derive(Debug)]
@@ -67,6 +69,7 @@ async fn main() {
         .route("/event/:event_id", get(view_event))
         .route("/new_attendee/:event_id", get(new_attendee))
         .route("/new_attendee/:event_id", post(new_attendee_post))
+        .route("/ics/:event_id", get(generate_ics))
         .with_state(shared_state);
 
     let ports = Ports {
@@ -231,4 +234,45 @@ async fn redirect_http_to_https(ports: Ports) {
     axum::serve(listener, redirect.into_make_service())
         .await
         .unwrap();
+}
+
+async fn generate_ics(State(state): State<Arc<join::AppState>>, Path(event_id): Path<Uuid>) -> Result<impl IntoResponse, StatusCode> {
+    let event = match get_event_by_id(&state, event_id){
+        Ok(res) => res,
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR)
+    };
+
+    let ics_time = event.time.format("%Y%m%dT%H%M%SZ").to_string();
+    let mut ics_event = ICSEvent::new(event.id.to_string(), &ics_time);
+    ics_event.push(Summary::new(event.description));
+    ics_event.push(Location::new(event.location));
+    ics_event.push(DtStart::new(&ics_time));
+    ics_event.push(TzID::new("/Etc/UTC"));
+
+    let mut calendar = ICalendar::new("2.0", "ics-rs");
+    calendar.add_event(ics_event);
+    match calendar.save_file("cal.ics"){
+        Ok(_) => {},
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR)
+    };
+
+    let data = match fs::read("cal.ics"){
+        Ok(res) => {res},
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR)
+    };
+    let stream = axum::body::Body::from(data);
+    match fs::remove_file("cal.ics") {
+        Ok(_) => {},
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR)
+    };
+
+    let headers = [
+        (header::CONTENT_TYPE, "text/calendar"),
+        (
+            header::CONTENT_DISPOSITION,
+            &format!("attachment; filename=\"{:?}\"", "calendar"),
+        ),
+    ];
+
+    Ok((headers, stream).into_response())
 }

@@ -16,3 +16,4 @@ rusqlite = { version = "0.32.1", features=["chrono", "uuid"] }
 minijinja = { version = "2.1.2", features=["loader"] }
 axum-server = { version = "0.7.1", features=["tls-rustls"] }
 axum-extra = "0.9.4"
+ics = "0.5.8"

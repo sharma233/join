@@ -6,11 +6,13 @@
 {% block content %}
 
     <div class="card p-3" id="event-card">
-		<h1> {{page.event.description}} </h1>
+		<h1 id="event-description"> {{page.event.description}} </h1>
 		<div class="card-body">
-			<p class="card-text"><i class="bi bi-compass-fill"></i> {{ page.event.location }} </p> 
-				<p hidden class="card-text" id="event-time-utc"><i class="bi bi-calendar-fill"></i> {{ page.event.time }}</p>
-				<p class="card-text" id="event-time"><i class="bi bi-calendar-fill"></i> </p>
+			<p hidden class="card-text" id="event-location"> {{ page.event.location }} </p> 
+			<p class="card-text" hidden="event-location"><i class="bi bi-compass-fill"></i> {{ page.event.location }} </p> 
+			<p hidden class="card-text" id="event-time-utc">{{ page.event.time }}</p>
+			<p class="card-text" id="event-time"></p>
+			<a href="/ics/{{page.event.id}}"><i class="bi bi-calendar-fill"></i></a>
 
 			<h5> Who's Going? </h5>
 			<ul class="list-group">
@@ -30,9 +32,11 @@
 {% endblock %}
 
 {% block scripts %}
+
 <script>
 	//set time based on user timezone
-	var localTime = moment($("#event-time-utc")[0].innerText).format('MMMM Do YYYY, h:mm:ss a');
+	var time = moment($("#event-time-utc")[0].innerText);
+	var localTime = time.format('MMMM Do YYYY, h:mm:ss a');
 	$($("#event-time")[0]).append(localTime);
 
 	//create random gradient
