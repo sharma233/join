@@ -11,10 +11,11 @@
 			<p hidden class="card-text" id="event-location"> {{ page.event.location }} </p> 
 			<p class="card-text" hidden="event-location"><i class="bi bi-compass-fill"></i> {{ page.event.location }} </p> 
 			<p hidden class="card-text" id="event-time-utc">{{ page.event.time }}</p>
-			<p class="card-text" id="event-time"></p>
-			<a href="/ics/{{page.event.id}}"><i class="bi bi-calendar-fill"></i></a>
+			<p class="card-text" id="event-time"><i class="bi bi-calendar-fill"></i> </p>
+			<a href="/ics/{{page.event.id}}">ICS File</a>
+			<a id="gcal-link" href="#">Google Calendar</a>
 
-			<h5> Who's Going? </h5>
+			<h5 class="mt-3"> Who's Going? </h5>
 			<ul class="list-group">
 				{% for a in page.attendees %}
 				<li class="list-group-item" data-id={{a.id}} class="list-group-item">
@@ -55,6 +56,27 @@
 		return color;
 	}
 	$("#event-card").css("background", "linear-gradient(to right," + getColor(true) + "," + getColor(false));
+
+	
+	$("#gcal-link").on("click", function() {
+		const location = $("#event-location").text();
+		const description = $("#event-description").text();
+
+
+		var utcTime = moment.utc($("#event-time-utc")[0].innerText);
+		console.log(utcTime);
+		var gcalTimeStart = utcTime.format('YYYYMMDDTHHmmSS');
+		gcalTimeStart += "Z";
+
+		var utcTimeEnd = utcTime.clone().add(1, 'h');
+		var gcalTimeEnd = utcTimeEnd.format('YYYYMMDDTHHmmSS');
+		gcalTimeEnd += "Z";
+
+		const gcalTimeString = gcalTimeStart + "/" + gcalTimeEnd;
+
+		console.log(gcalTimeString);
+		window.open("https://www.google.com/calendar/render?action=TEMPLATE&text="+description+"&dates="+gcalTimeString+"&location="+location+"&sf=true&output=xml");
+	});
 </script>
 
 {% endblock %}
