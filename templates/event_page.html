@@ -9,13 +9,13 @@
 		<h1 id="event-description"> {{page.event.description}} </h1>
 		<div class="card-body">
 			<p hidden class="card-text" id="event-location"> {{ page.event.location }} </p> 
-			<p class="card-text" hidden="event-location"><i class="bi bi-compass-fill"></i> {{ page.event.location }} </p> 
+			<p class="card-text" id="event-location"><i class="bi bi-compass-fill"></i> {{ page.event.location }} </p> 
 			<p hidden class="card-text" id="event-time-utc">{{ page.event.time }}</p>
 			<p class="card-text" id="event-time"><i class="bi bi-calendar-fill"></i> </p>
 			<a href="/ics/{{page.event.id}}">ICS File</a>
 			<a id="gcal-link" href="#">Google Calendar</a>
 
-			<h5 class="mt-3"> Who's Going? </h5>
+			<h5> Who's Going? </h5>
 			<ul class="list-group">
 				{% for a in page.attendees %}
 				<li class="list-group-item" data-id={{a.id}} class="list-group-item">
