@@ -8,7 +8,7 @@ use axum::{
     routing::{get, post},
     Router,
     extract::{State, Form, Path, Host},
-    response::{Html, Redirect, IntoResponse},
+    response::{Html, Redirect, IntoResponse, Response},
     BoxError,
 };
 use axum_server::tls_rustls::RustlsConfig;
@@ -23,6 +23,7 @@ use uuid::Uuid;
 use event::event::{get_event_by_id, Event};
 use event::event::create_event;
 use std::net::SocketAddr;
+use std::error::Error;
 use ics::{properties::{DtStart, Location, Summary, TzID}, Event as ICSEvent, ICalendar};
 
 #[derive(Deserialize)]
@@ -51,6 +52,29 @@ struct NewAttendeeForm {
 struct Ports {
     http: u16,
     https: u16
+}
+
+pub enum AppError {
+    Err(Box<dyn Error>),
+    MinijinjaErr(minijinja::Error)
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, render_error()).into_response()
+    }
+}
+
+impl From<Box<dyn Error>> for AppError {
+    fn from(err: Box<dyn Error>) -> Self {
+        Self::Err(err)
+    }
+}
+
+impl From<minijinja::Error> for AppError {
+    fn from(err: minijinja::Error) -> Self {
+        Self::MinijinjaErr(err)
+    }
 }
 
 #[tokio::main]
@@ -92,22 +116,31 @@ fn make_env() -> Environment<'static> {
     env
 }
 
-async fn root(State(_state): State<Arc<join::AppState>>) -> Html<String> {
+async fn root(State(_state): State<Arc<join::AppState>>) -> Result<Html<String>, AppError> {
     let env = make_env();
-    let home_template = env.get_template("home.html").unwrap();
-    Html(home_template.render(()).unwrap())
+    let home_template = env.get_template("home.html")?;
+    match home_template.render(()) {
+        Ok(template) => Ok(Html(template)),
+        Err(e) => Err(e.into())
+    }
 }
 
-async fn new_event(State(_state): State<Arc<join::AppState>>) -> Html<String> {
+async fn new_event(State(_state): State<Arc<join::AppState>>) -> Result<Html<String>, AppError> {
     let env = make_env();
-    let new_event_template = env.get_template("new_event.html").unwrap();
-    Html(new_event_template.render(()).unwrap())
+    let new_event_template = env.get_template("new_event.html")?;
+    match new_event_template.render(()) {
+        Ok(template) => Ok(Html(template)),
+        Err(e) => Err(e.into())
+    }
 }
 
-async fn new_attendee(State(_state): State<Arc<join::AppState>>) -> Html<String> {
+async fn new_attendee(State(_state): State<Arc<join::AppState>>) -> Result<Html<String>, AppError> {
     let env = make_env();
-    let new_attendee_template = env.get_template("new_attendee.html").unwrap();
-    Html(new_attendee_template.render(()).unwrap())
+    let new_attendee_template = env.get_template("new_attendee.html")?;
+    match new_attendee_template .render(()) {
+        Ok(template) => Ok(Html(template)),
+        Err(e) => Err(e.into())
+    }
 }
 
 fn render_error() -> Html<String> {
@@ -116,34 +149,22 @@ fn render_error() -> Html<String> {
     Html(error_template.render(()).unwrap())
 }
 
-async fn view_event(State(state): State<Arc<join::AppState>>, Path(event_id): Path<Uuid>) -> Html<String> {
+async fn view_event(State(state): State<Arc<join::AppState>>, Path(event_id): Path<Uuid>) -> Result<Html<String>, AppError> {
     let env = make_env();
     let new_event_template = env.get_template("event_page.html").unwrap();
     
-    let event = match get_event_by_id(&state, event_id) {
-        Ok(res) => res,
-        Err(e) => {
-            dbg!(e); 
-            return render_error()
-        }
-    };
+    let event = get_event_by_id(&state, event_id)?;
 
-    let attendees = match get_attendees_by_event_id(&state, event_id) {
-        Err(e) => {
-            dbg!(e);
-            return render_error()
-        },
-        Ok(res) => res
-    };
+    let attendees = get_attendees_by_event_id(&state, event_id)?;
     let page = context! {
         event => event,
         attendees => attendees
     };
 
-    Html(new_event_template.render(context!(page)).unwrap())
+    Ok(Html(new_event_template.render(context!(page)).unwrap()))
 }
 
-async fn new_event_post(State(state): State<Arc<join::AppState>>, Form(new_event_form): Form<NewEventForm>) -> Redirect {
+async fn new_event_post(State(state): State<Arc<join::AppState>>, Form(new_event_form): Form<NewEventForm>) -> Result<Redirect, AppError> {
     let uuid = Uuid::new_v4();
     let event = Event { 
         id: uuid,
@@ -152,13 +173,7 @@ async fn new_event_post(State(state): State<Arc<join::AppState>>, Form(new_event
         description: new_event_form.desc
     };
 
-    match create_event(&state, &event) {
-        Err(e) => {
-            dbg!(e);
-            return Redirect::to("/error/")
-        },
-        Ok(_) => {}
-    };
+    create_event(&state, &event)?;
 
     let a_uuid = Uuid::new_v4();
     let attendee = Attendee {
@@ -168,16 +183,10 @@ async fn new_event_post(State(state): State<Arc<join::AppState>>, Form(new_event
         last_name: new_event_form.last_name,
     };
 
-    match create_attendee(&state, &attendee) {
-        Err(e) => {
-            dbg!(e);
-            return Redirect::to("/error/")
-        },
-        Ok(_) => {}
-    }
+    create_attendee(&state, &attendee)?;
 
     let redir_url = format!("/event/{}", uuid);
-    Redirect::to(&redir_url)
+    Ok(Redirect::to(&redir_url))
 }
 
 
@@ -185,7 +194,7 @@ async fn new_attendee_post(State(state): State<Arc<join::AppState>>, Path(event_
     let a_uuid = Uuid::new_v4();
     let attendee = Attendee {
         id: a_uuid,
-        event_id: event_id,
+        event_id,
         first_name: new_attendee_form.first_name,
         last_name: new_attendee_form.last_name,
     };
